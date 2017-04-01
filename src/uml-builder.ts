@@ -96,7 +96,6 @@ function buildClass(classDef: Class, g: graphviz.Graph, path: string) {
         });
     
     if(classDef.extends) {
-        // add inheritance arrow
         g.addEdge(
             classNode, 
             classDef.extends.parts.reduce((path, name) => getGraphNodeId(path, name), ""), 
@@ -126,7 +125,8 @@ function getPropertySignature(property: Property): string {
             (property.hasGetter ? "get" : null),
             (property.hasSetter ? "set" : null)
         ].filter(v => v !== null).join("/"),
-        getName(property)
+        getNameBeforeTypeName(property),
+        property.typeName
     ].join(" ");
 }
 
@@ -147,6 +147,12 @@ function lifetimeToString(lifetime: Lifetime) {
 
 function getName(element: Element) {
     return element.name;
+}
+
+function getNameBeforeTypeName(property: Property) {
+    if (property.typeName)
+        return property.name + ":";
+    return property.name;
 }
 
 function getGraphNodeId(path: string, name: string): string {

@@ -161,6 +161,7 @@ export class ImportedModule extends Element {
 export class Property extends Element {
     private _hasGetter: boolean;
     private _hasSetter: boolean;
+    private _typeName: string;
     
     public get hasGetter(): boolean {
         return this._hasGetter;
@@ -176,6 +177,14 @@ export class Property extends Element {
     
     public set hasSetter(value: boolean) {
         this._hasSetter = value;
+    }
+
+    public get typeName(): string {
+        return this._typeName;
+    }
+    
+    public set typeName(value: string) {
+        this._typeName = value;
     }
 }
 

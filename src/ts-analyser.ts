@@ -18,7 +18,6 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
     function analyseNode(node: ts.Node, currentElement: Element) {
         let childElement: Element;
         let skipChildren = false;
-        
         switch (node.kind) {
             case ts.SyntaxKind.ModuleDeclaration:
                 let moduleDeclaration = <ts.ModuleDeclaration> node;
@@ -39,6 +38,7 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
             case ts.SyntaxKind.ClassDeclaration:
                 let classDeclaration = <ts.ClassDeclaration> node;
                 let classDef = new Class(classDeclaration.name.text, currentElement, getVisibility(node));
+                classDef.isAbstract = checkIfAbstract(classDeclaration.modifiers);
                 if (classDeclaration.heritageClauses) {
                     let extendsClause = Collections.firstOrDefault(classDeclaration.heritageClauses, c => c.token === ts.SyntaxKind.ExtendsKeyword);
                     if (extendsClause && extendsClause.types.length > 0) {
@@ -69,6 +69,7 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
             case ts.SyntaxKind.FunctionDeclaration:
                 let functionDeclaration = <ts.Declaration> node;
                 childElement = new Method((<ts.Identifier>functionDeclaration.name).text, currentElement, getVisibility(node), getLifetime(node));
+                childElement.isAbstract = checkIfAbstract(functionDeclaration.modifiers);
                 skipChildren = true;
                 break;
                 
@@ -108,6 +109,11 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
                 return String(kind);
         }
     }
+
+    function checkIfAbstract(modifiers: ts.ModifiersArray): boolean {
+        return !modifiers ? false :
+            checkModifiersForFlag(modifiers, ts.SyntaxKind.AbstractKeyword);
+    }
     
     function getFullyQualifiedName(expression: ts.ExpressionWithTypeArguments) {
         let symbol = typeChecker.getSymbolAtLocation(expression.expression);
@@ -134,13 +140,13 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
     
     function getVisibility(node: ts.Node) {
         if (node.modifiers) {
-            if (hasModifierSet(node.modifiers.flags, ts.NodeFlags.Protected)) {
+            if (checkModifiersForFlag(node.modifiers, ts.SyntaxKind.ProtectedKeyword)) {
                 return Visibility.Protected;
-            } else if (hasModifierSet(node.modifiers.flags, ts.NodeFlags.Private)) {
+            } else if (checkModifiersForFlag(node.modifiers, ts.SyntaxKind.PrivateKeyword)) {
                 return Visibility.Private;
-            } else if (hasModifierSet(node.modifiers.flags, ts.NodeFlags.Public)) {
+            } else if (checkModifiersForFlag(node.modifiers, ts.SyntaxKind.PublicKeyword)) {
                 return Visibility.Public;
-            } else if (hasModifierSet(node.modifiers.flags, ts.NodeFlags.Export)) {
+            } else if (checkModifiersForFlag(node.modifiers, ts.SyntaxKind.ExportKeyword)) {
                 return Visibility.Public;
             }
         }
@@ -152,18 +158,24 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
         }
         return Visibility.Private;
     }
-    
+
     function getLifetime(node: ts.Node) {
         if (node.modifiers) {
-            if (hasModifierSet(node.modifiers.flags, ts.NodeFlags.Static)) {
+            if (checkModifiersForFlag(node.modifiers, ts.SyntaxKind.StaticKeyword)) {
                 return Lifetime.Static;
             }
         }
         return Lifetime.Instance;
     }
-    
+
+    function checkModifiersForFlag(modifiers: ts.ModifiersArray, flag: number) {
+        return modifiers.some(function(modifier): boolean {
+                return hasModifierSet(modifier.kind, flag);
+        });
+    }
+
     function hasModifierSet(value: number, modifier: number) {
-        return (value & modifier) === modifier;
+        return value && modifier && (value === modifier);
     }
 
     return module;

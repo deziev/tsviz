@@ -1,6 +1,6 @@
 
-export class Shape {
-	public draw() {}
+export abstract class Shape {
+	public abstract draw();
 	public resize() {}
 	public rotate() { }
 }

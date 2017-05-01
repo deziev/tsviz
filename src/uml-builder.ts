@@ -37,17 +37,23 @@ export function buildUml(modules: Module[], outputFilename: string, dependencies
         g.setGraphVizPath(path);
     }
     
-    // Generate a PNG output
-    g.output({
-        type: "svg",
-        use: "dot",
-        path: path,
-        G: {
-            //dpi: 200
-        },
-        N: {},
-        E: {}
-    }, outputFilename);
+    // Generate output file
+    let fileExtension: any;
+    if (~outputFilename.lastIndexOf('.png')) {
+        fileExtension = 'png';
+    } else {
+       fileExtension = {
+            type: "svg",
+            use: "dot",
+            path: path,
+            G: {
+                //dpi: 200
+            },
+            N: {},
+            E: {}
+        }; 
+    }
+    g.output(fileExtension, outputFilename);
 }
 
 function buildModule(module: Module, g: graphviz.Graph, path: string, level: number, dependenciesOnly: boolean) {
@@ -92,7 +98,11 @@ function buildClass(classDef: Class, g: graphviz.Graph, path: string) {
     let classNode = g.addNode(
         getGraphNodeId(path, classDef.name),
         { 
-            "label": "{" + [ classDef.name, methodsSignatures, propertiesSignatures].filter(e => e.length > 0).join("|") + "}"
+            "label": "{" + [ 
+                abstractToString(classDef.isAbstract) + classDef.name,
+                methodsSignatures,
+                propertiesSignatures
+            ].filter(e => e.length > 0).join("|") + "}"
         });
     
     if(classDef.extends) {
@@ -112,6 +122,7 @@ function combineSignatures<T extends Element>(elements: T[], map: (e: T) => stri
 function getMethodSignature(method: Method): string {
     return [ 
         visibilityToString(method.visibility),
+        abstractToString(method.isAbstract),
         lifetimeToString(method.lifetime),
         getName(method) + "()"
     ].join(" ");
@@ -158,4 +169,7 @@ function getNameBeforeTypeName(property: Property) {
 function getGraphNodeId(path: string, name: string): string {
     let result = ((path ? path + "/" : "") + name).replace(/\//g, "|");
     return result;
+}
+function abstractToString(isAbstract: boolean): string {
+    return isAbstract ? '\\<abstract\\> ' : '';
 }

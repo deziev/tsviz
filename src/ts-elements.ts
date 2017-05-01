@@ -29,7 +29,12 @@ export class QualifiedName {
 }
 
 export abstract class Element {
-    constructor(private _name: string, private _parent: Element, private _visibility: Visibility = Visibility.Public, private _lifetime: Lifetime = Lifetime.Instance) { }
+    constructor(
+        private _name: string, 
+        private _parent: Element,
+        private _visibility: Visibility = Visibility.Public,
+        private _lifetime: Lifetime = Lifetime.Instance,
+        private _isAbstract: boolean = false) { }
     
     public get name(): string {
         return this._name;
@@ -45,6 +50,14 @@ export abstract class Element {
     
     public get parent() : Element {
         return this._parent;
+    }
+
+    public get isAbstract(): boolean {
+        return this._isAbstract;
+    }
+
+    public set isAbstract(value: boolean) {
+        this._isAbstract = value;
     }
     
     public addElement(element: Element) {

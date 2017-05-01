@@ -53,6 +53,7 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
             case ts.SyntaxKind.PropertyDeclaration:
                 let propertyDeclaration = <ts.PropertyDeclaration> node;
                 let property = new Property((<ts.Identifier>propertyDeclaration.name).text, currentElement, getVisibility(node), getLifetime(node));
+                property.typeName = getTypeName(propertyDeclaration.type);
                 switch (node.kind) {
                     case ts.SyntaxKind.GetAccessor:
                         property.hasGetter = true;
@@ -82,6 +83,30 @@ export function collectInformation(program: ts.Program, sourceFile: ts.SourceFil
         }
         
         ts.forEachChild(node, (node) => analyseNode(node, childElement || currentElement));
+    }
+
+    function getTypeName(typeNode: ts.TypeNode): string {
+        let kind = typeNode && typeNode.kind;
+        switch (kind) {
+            case ts.SyntaxKind.AnyKeyword:
+                return "any";
+            case ts.SyntaxKind.BooleanKeyword:
+                return "boolean";
+            case ts.SyntaxKind.NumberKeyword:
+                return "number";
+            case ts.SyntaxKind.StringKeyword:
+                return "string";
+            case ts.SyntaxKind.FunctionType:
+                return "function";
+            case ts.SyntaxKind.ArrayType:
+                let arrayTypeNode = <ts.ArrayTypeNode> typeNode;
+                return "Array&lt;" + arrayTypeNode.elementType.getFullText().trim() + "&gt;";
+            case ts.SyntaxKind.TypeReference:
+                let typeRefNode = <ts.TypeReferenceNode> typeNode;
+                return typeRefNode.typeName.getFullText().trim();
+            default: // undefined
+                return String(kind);
+        }
     }
     
     function getFullyQualifiedName(expression: ts.ExpressionWithTypeArguments) {

@@ -24,7 +24,8 @@ export function buildUml(modules: Module[], outputFilename: string, dependencies
     modules.forEach(module => {
         buildModule(module, g, module.path, 0, dependenciesOnly);
     });
-    
+
+    let path: string = null;
     if (process.platform === "win32") {
         let pathVariable = <string> process.env["PATH"];
         if (pathVariable.indexOf("Graphviz") === -1) {
@@ -32,11 +33,21 @@ export function buildUml(modules: Module[], outputFilename: string, dependencies
         }
     } else {
         // Set GraphViz path (if not in your path)
-        g.setGraphVizPath("/usr/local/bin");
+        path = "/usr/local/bin";
+        g.setGraphVizPath(path);
     }
     
     // Generate a PNG output
-    g.output("png", outputFilename);
+    g.output({
+        type: "svg",
+        use: "dot",
+        path: path,
+        G: {
+            //dpi: 200
+        },
+        N: {},
+        E: {}
+    }, outputFilename);
 }
 
 function buildModule(module: Module, g: graphviz.Graph, path: string, level: number, dependenciesOnly: boolean) {
@@ -85,7 +96,6 @@ function buildClass(classDef: Class, g: graphviz.Graph, path: string) {
         });
     
     if(classDef.extends) {
-        // add inheritance arrow
         g.addEdge(
             classNode, 
             classDef.extends.parts.reduce((path, name) => getGraphNodeId(path, name), ""), 
@@ -115,7 +125,8 @@ function getPropertySignature(property: Property): string {
             (property.hasGetter ? "get" : null),
             (property.hasSetter ? "set" : null)
         ].filter(v => v !== null).join("/"),
-        getName(property)
+        getNameBeforeTypeName(property),
+        property.typeName
     ].join(" ");
 }
 
@@ -136,6 +147,12 @@ function lifetimeToString(lifetime: Lifetime) {
 
 function getName(element: Element) {
     return element.name;
+}
+
+function getNameBeforeTypeName(property: Property) {
+    if (property.typeName)
+        return property.name + ":";
+    return property.name;
 }
 
 function getGraphNodeId(path: string, name: string): string {

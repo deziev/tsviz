@@ -4,7 +4,11 @@
 	    "noImplicitAny": true,
 	    "removeComments": true,
 	    "preserveConstEnums": true,
-		"target": "ES5",
-		"outDir": "../bin/"
-	}
+		"target": "ES6",
+		"outDir": "bin",
+		"rootDir": "src"
+	},
+	"include": [
+        "src/**/*"
+    ]
 }
